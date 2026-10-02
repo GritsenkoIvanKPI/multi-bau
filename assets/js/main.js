@@ -358,8 +358,9 @@
     };
     const sync = () => {
       const max = track.scrollWidth - track.clientWidth;
-      prev.disabled = track.scrollLeft <= 2;
-      next.disabled = track.scrollLeft >= max - 2;
+      /* small tolerance: card snapping can leave the track a few pixels off the edges */
+      prev.disabled = track.scrollLeft <= 10;
+      next.disabled = track.scrollLeft >= max - 10;
       progress.style.setProperty('--p', track.scrollWidth ? (track.scrollLeft + track.clientWidth) / track.scrollWidth : 1);
     };
     prev.addEventListener('click', () => track.scrollBy({ left: -stepSize(), behavior: 'smooth' }));

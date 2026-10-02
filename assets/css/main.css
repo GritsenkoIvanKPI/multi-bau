@@ -1101,3 +1101,14 @@ h1, h2, h3, h4, h5, p, li, blockquote, figcaption, small, label, legend { text-w
 /* safety net – clip (not hidden) so position: sticky keeps working */
 html, body { overflow-x: hidden; }
 @supports (overflow: clip) { html, body { overflow-x: clip; } }
+
+/* Phones: every button spans the content width (aligned to the 16px grid gutter) */
+@media (max-width: 767px) {
+  .button:not(.button--small) { display: flex; width: 100%; }
+}
+
+/* Phones: review arrows centred, progress line full width above them */
+@media (max-width: 767px) {
+  .carousel__nav { flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: 32px; }
+  .carousel__progress { order: -1; flex: 0 0 100%; margin: 0 0 8px; }
+}
