@@ -1,0 +1,17 @@
+# Working files – not part of the website
+temporary screenshots/
+assets/img/raw/
+video.mp4
+desktop.png
+
+# Internal docs (client brief, AI tooling notes)
+Бриф*.txt
+CLAUDE.md
+SKILL.md
+SKILL canvas.md
+GEMINI_IMAGE_GENERATION.md
+
+# System / tooling
+.DS_Store
+node_modules/
+.env
