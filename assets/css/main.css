@@ -1115,10 +1115,9 @@ html, body { overflow-x: hidden; }
   .svc-acc__item summary > span:first-child { transition: transform .5s var(--ease-spring); }
   .svc-acc__item summary:active > span:first-child { transform: scale(.98); }
   .svc-acc__icon { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--_colors---ui--light-1); color: var(--_colors---brand--brand-2); transition: transform .55s var(--ease-spring); }
-  .svc-acc__icon svg { width: 18px; height: 18px; }
-  .svc-acc__item[open] .svc-acc__icon { transform: rotate(45deg); }
+  .svc-acc__icon svg { width: 18px; height: 18px; transform: rotate(180deg); transition: transform .55s var(--ease-spring); } /* closed: arrow points left */
+  .svc-acc__item[open] .svc-acc__icon svg { transform: rotate(90deg); }                                                      /* open: arrow points down */
   .svc-acc__item summary:active .svc-acc__icon { transform: scale(.9); }
-  .svc-acc__item[open] summary:active .svc-acc__icon { transform: rotate(45deg) scale(.9); }
 
   .svc-acc__body { padding: 0 20px 20px; }
   .svc-acc__item[open] .svc-acc__body { animation: svcAccIn .5s var(--ease-out) both; }
@@ -1128,8 +1127,8 @@ html, body { overflow-x: hidden; }
     padding: 12px 0; font-size: 16px; line-height: 1.35; border-bottom: 1px dotted var(--_colors---ui--light-1-faded);
     transition: opacity .25s var(--ease-out);
   }
-  .svc-acc__body li a svg { flex: none; width: 16px; height: 16px; opacity: .6; transition: transform .45s var(--ease-spring), opacity .25s; }
-  .svc-acc__body li a:is(:hover, :focus-visible) svg { transform: translateX(4px); opacity: 1; }
+  .svc-acc__body li a svg { flex: none; width: 16px; height: 16px; opacity: .6; transform: rotate(-45deg); transition: transform .45s var(--ease-spring), opacity .25s; }
+  .svc-acc__body li a:is(:hover, :focus-visible) svg { transform: translate(3px, -3px) rotate(-45deg); opacity: 1; }
   .svc-acc__body li a:focus-visible { outline: 2px solid var(--_colors---ui--light-1); outline-offset: 2px; border-radius: 2px; }
   .svc-acc__body li a:active { opacity: .6; }
 }
@@ -1146,3 +1145,34 @@ html, body { overflow-x: hidden; }
 .form-next__list .mono { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 6px; background: var(--_colors---brand--brand-2); color: var(--_colors---ui--light-1); font-size: 11px; }
 .form-next__list li > span:last-child { font-size: 14px; line-height: 1.5; color: var(--_colors---text--dark-body); }
 .form-next__list strong { display: block; font-weight: 500; font-size: 16px; line-height: 1.35; color: var(--_colors---text--dark); margin-bottom: 2px; }
+
+/* Phones/tablets: two main services right in the navbar */
+.nav-quick { display: none; }
+@media (max-width: 991px) {
+  .nav-quick { display: flex; gap: 8px; margin-left: auto; transition: opacity .3s var(--ease-out); }
+  .navbar.menu-open .nav-quick { opacity: 0; pointer-events: none; }
+  .nav-quick__link {
+    display: flex; flex-direction: column; justify-content: center; gap: 2px;
+    padding: 7px 12px; border-radius: var(--_border-radii---default);
+    border: 1px solid var(--_colors---ui--light-1-faded); background: rgba(248, 246, 240, .06);
+    font-size: 14px; line-height: 1.1; letter-spacing: -.01em; white-space: nowrap;
+    transition: transform .5s var(--ease-spring), background-color .3s var(--ease-out);
+  }
+  .nav-quick__link .mono { font-size: 9px; letter-spacing: .06em; opacity: .7; }
+  .nav-quick__link:is(:hover, :focus-visible) { transform: translateY(-1px); background-color: rgba(248, 246, 240, .14); }
+  .nav-quick__link:focus-visible { outline: 2px solid var(--_colors---ui--light-1); outline-offset: 2px; }
+  .nav-quick__link:active { transform: scale(.95); }
+}
+@media (max-width: 360px) {
+  .nav-quick { gap: 6px; }
+  .nav-quick__link { padding: 6px 9px; font-size: 13px; }
+}
+@media (max-width: 991px) {
+  .navbar__left { flex: none; }
+  .nav-quick { min-width: 0; gap: 6px; }
+  .nav-quick__link { min-width: 0; padding: 6px 10px; font-size: 13px; }
+}
+@media (max-width: 400px) {
+  .nav-quick__link { white-space: normal; line-height: 1.05; }
+  .nav-quick__link:first-child { max-width: 96px; }
+}
