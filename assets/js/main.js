@@ -48,6 +48,17 @@
     document.addEventListener('click', (e) => { if (desktop.matches && !dropdown.contains(e.target)) setOpen(false); });
   }
 
+  /* Services on phones: one block open at a time, background photo follows it */
+  document.querySelectorAll('[data-svc-acc]').forEach((root) => {
+    const items = [...root.querySelectorAll('details')];
+    const imgs = [...root.closest('section').querySelectorAll('[data-svc-bg] img')];
+    items.forEach((item) => item.addEventListener('toggle', () => {
+      if (!item.open) return;
+      items.forEach((other) => { if (other !== item) other.open = false; });
+      imgs.forEach((img) => img.classList.toggle('is-active', img.dataset.for === item.dataset.key));
+    }));
+  });
+
   /* Service tabs */
   document.querySelectorAll('[data-tabs]').forEach((root) => {
     const tabs = [...root.querySelectorAll('[role="tab"]')];
@@ -153,7 +164,7 @@
   /* Magnetic pull on round arrow icons */
   if (finePointer && !reduceMotion) {
     const clamp = (v, max) => Math.max(-max, Math.min(max, v));
-    document.querySelectorAll('.arrow-link, .hero-contact').forEach((link) => {
+    document.querySelectorAll('.arrow-link').forEach((link) => {
       const icon = link.querySelector('.arrow-link__icon');
       if (!icon) return;
       link.addEventListener('pointermove', (e) => {
@@ -173,9 +184,11 @@
   const CALC_RATES = {
     bad:      { name: 'Ремонт ванної',      unit: 'Площа ванної кімнати', min: 2,  max: 20,  value: 6,  rate: [650, 950], minTotal: 3500 },
     wohnung:  { name: 'Ремонт квартири',    unit: 'Площа квартири',       min: 20, max: 150, value: 60, rate: [160, 290], minTotal: 2500 },
-    boden:    { name: 'Роботи з підлогою',  unit: 'Площа підлоги',        min: 5,  max: 150, value: 30, rate: [28, 55],   minTotal: 600 },
-    maler:    { name: 'Малярні роботи',     unit: 'Площа стін і стель',   min: 10, max: 400, value: 80, rate: [18, 34],   minTotal: 500 },
-    sanitaer: { name: 'Сантехнічні роботи', unit: 'Площа ванної кімнати', min: 2,  max: 20,  value: 6,  rate: [380, 620], minTotal: 1800 },
+  };
+  /* ЗАГЛУШКА: коефіцієнти для кроку 02 – уточнити з клієнтом */
+  const CALC_OPTIONS = {
+    bad:     { field: 'bathType',  label: 'Комплектація', items: { shower: ['Душ', 1], bath: ['Ванна', 0.95], both: ['Душ і ванна', 1.18] } },
+    wohnung: { field: 'flatScope', label: 'Обсяг',        items: { cosmetic: ['Косметичний', 0.55], capital: ['Капітальний', 1], turnkey: ['Під ключ', 1.25] } },
   };
   const LEVELS = { standard: ['Стандарт', 1], comfort: ['Комфорт', 1.2], premium: ['Преміум', 1.45] };
   const calc = document.querySelector('[data-calc]');
@@ -204,11 +217,14 @@
       if (key !== lastService) { /* new service → its own area range */
         area.min = svc.min; area.max = svc.max; area.value = svc.value;
         q('[data-area-label]').textContent = svc.unit;
+        calc.querySelectorAll('[data-calc-option]').forEach((f) => { f.hidden = f.dataset.calcOption !== key; });
         lastService = key;
       }
       const m2 = Number(area.value);
       const [levelName, levelK] = LEVELS[data.get('level')];
-      let k = levelK;
+      const opt = CALC_OPTIONS[key];
+      const [optName, optK] = opt.items[data.get(opt.field)];
+      let k = levelK * optK;
       if (data.get('demo')) k *= 1.1;
       if (data.get('materials')) k *= 1.6;
       if (data.get('urgent')) k *= 1.12;
@@ -222,16 +238,18 @@
       const price = q('.calc__price');
       price.classList.remove('is-bump'); void price.offsetWidth; price.classList.add('is-bump');
       q('[data-sum-service]').textContent = svc.name;
+      q('[data-sum-option-label]').textContent = opt.label;
+      q('[data-sum-option]').textContent = optName;
       q('[data-sum-area]').textContent = `${m2} м²`;
       q('[data-sum-level]').textContent = levelName;
       q('[data-sum-materials]').textContent = data.get('materials') ? 'Враховано' : 'Не враховано';
-      calc.dataset.summary = `Розрахунок калькулятора: ${svc.name}, ${m2} м², рівень «${levelName}» – орієнтовно ${fmt.format(from)}–${fmt.format(to)} €.`;
+      calc.dataset.summary = `Розрахунок калькулятора: ${svc.name} (${optName.toLowerCase()}), ${m2} м², рівень «${levelName}» – орієнтовно ${fmt.format(from)}–${fmt.format(to)} €.`;
     };
     calc.addEventListener('input', update);
     calc.addEventListener('submit', (e) => e.preventDefault());
     update();
 
-    /* "Отримати точний кошторис" → pre-fill the feedback form */
+    /* "Залишити заявку" → pre-fill the feedback form */
     q('[data-calc-apply]')?.addEventListener('click', () => {
       const form = document.querySelector('[data-lead-form]');
       if (!form) return;
@@ -241,88 +259,6 @@
       if (f.message && !f.message.value.trim()) f.message.value = calc.dataset.summary;
       setTimeout(() => f.name?.focus({ preventScroll: true }), 700);
     });
-  }
-
-  /* ---------- Gallery: filter + lightbox ---------- */
-  const gallery = document.querySelector('[data-gallery]');
-  if (gallery) {
-    const items = [...gallery.querySelectorAll('.g-item')];
-    /* Filter: fade the grid out, swap the layout while it's invisible, then let the photos glide in one by one */
-    let switchTimer;
-    let settleTimer;
-    const applyFilter = (f) => {
-      const shown = [];
-      items.forEach((item) => {
-        const show = f === 'all' || item.dataset.cat === f;
-        item.hidden = !show;
-        item.classList.remove('is-lead');
-        if (show) shown.push(item);
-      });
-      gallery.classList.toggle('is-filtered', f !== 'all');
-      gallery.style.setProperty('--cols', Math.min(shown.length, 4));
-      if (f !== 'all' && shown.length % 2) shown[0].classList.add('is-lead');
-      shown.forEach((item, i) => {
-        item.style.setProperty('--i', i);
-        item.classList.add('is-entering');
-      });
-      gallery.classList.remove('is-switching');
-      void gallery.offsetWidth; /* commit the start state before animating in */
-      shown.forEach((item) => item.classList.remove('is-entering'));
-      clearTimeout(settleTimer);
-      settleTimer = setTimeout(() => shown.forEach((item) => item.style.removeProperty('--i')), 1200);
-    };
-    document.querySelectorAll('[data-filter]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (btn.classList.contains('is-active')) return;
-        document.querySelectorAll('[data-filter]').forEach((b) => {
-          b.classList.toggle('is-active', b === btn);
-          b.setAttribute('aria-pressed', String(b === btn));
-        });
-        clearTimeout(switchTimer);
-        if (reduceMotionPref) { applyFilter(btn.dataset.filter); return; }
-        gallery.classList.add('is-switching');
-        switchTimer = setTimeout(() => applyFilter(btn.dataset.filter), 200);
-      });
-    });
-
-    const dialog = document.querySelector('[data-lightbox-dialog]');
-    if (dialog && dialog.showModal) {
-      const img = dialog.querySelector('[data-lb-img]');
-      let list = [];
-      let current = 0;
-      let opener = null;
-      const show = (i) => {
-        current = (i + list.length) % list.length;
-        const btn = list[current];
-        const src = btn.querySelector('img');
-        img.src = src.currentSrc || src.src;
-        img.alt = src.alt;
-        img.classList.remove('is-swapping'); void img.offsetWidth; img.classList.add('is-swapping');
-        dialog.querySelector('[data-lb-meta]').textContent = btn.querySelector('.g-item__cap .mono')?.textContent || '';
-        dialog.querySelector('[data-lb-title]').textContent = btn.querySelector('.g-item__title')?.textContent || '';
-        dialog.querySelector('[data-lb-count]').textContent = `${current + 1} / ${list.length}`;
-        if (dialog.open) fixWidows(dialog);
-      };
-      gallery.querySelectorAll('[data-lightbox]').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          list = items.filter((it) => !it.hidden).map((it) => it.querySelector('[data-lightbox]'));
-          opener = btn;
-          show(list.indexOf(btn));
-          dialog.showModal();
-          fixWidows(dialog);
-          document.body.style.overflow = 'hidden';
-        });
-      });
-      dialog.querySelector('[data-lb-prev]').addEventListener('click', () => show(current - 1));
-      dialog.querySelector('[data-lb-next]').addEventListener('click', () => show(current + 1));
-      dialog.querySelector('[data-lb-close]').addEventListener('click', () => dialog.close());
-      dialog.addEventListener('click', (e) => { if (e.target === dialog || e.target.classList.contains('lightbox__inner')) dialog.close(); });
-      dialog.addEventListener('keydown', (e) => {
-        if (e.key === 'ArrowRight') show(current + 1);
-        if (e.key === 'ArrowLeft') show(current - 1);
-      });
-      dialog.addEventListener('close', () => { document.body.style.overflow = ''; opener?.focus(); });
-    }
   }
 
   /* ---------- How we work: progress line follows the scroll ---------- */
