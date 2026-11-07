@@ -119,13 +119,13 @@ export const layout = ({ path, title, description, body, image = '/assets/img/he
   <meta property="og:locale" content="uk_UA">
   <meta property="og:title" content="${esc(title)} | Multi Bau Berlin">
   <meta property="og:description" content="${esc(description)}">
-  <meta property="og:image" content="${image}">
+  <meta property="og:image" content="https://www.multibau-berlin.de${image}">
   <meta name="theme-color" content="#1C385C">
   <link rel="icon" href="/assets/img/logo.svg" type="image/svg+xml">
   <link rel="preload" href="/assets/fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/assets/css/main.css">
-  <script>document.documentElement.classList.add('js');</script>${schema ? `
-  <script type="application/ld+json">${JSON.stringify(schema)}</script>` : ''}
+  <script>document.documentElement.classList.add('js');</script>${[].concat(schema || []).map((s) => `
+  <script type="application/ld+json">${JSON.stringify(s)}</script>`).join('')}
 </head>
 <body class="inner-page">
   <!-- Згенеровано tools/build.mjs – редагуйте контент у tools/content.mjs, а не цей файл -->
@@ -142,3 +142,23 @@ export const layout = ({ path, title, description, body, image = '/assets/img/he
 </html>
 `;
 };
+
+/* SEO text block with a “Читати далі” toggle */
+export const seoBlock = ({ title, intro, sections }) => `
+    <section class="seo-text section" aria-labelledby="seo-title">
+      <div class="container grid-2 seo-text__grid">
+        <div class="seo-text__head" data-reveal>
+          <p class="badge">Корисно знати</p>
+          <h2 id="seo-title">${title}</h2>
+        </div>
+        <div class="seo-text__body prose" data-reveal data-d="1">
+          <p>${intro}</p>
+          <details class="seo-more">
+            <summary><span class="seo-more__open">Читати далі</span><span class="seo-more__close">Згорнути</span>${icon('chevron')}</summary>
+            <div class="seo-more__body">
+              ${sections.map(([h, p]) => `<h3>${h}</h3>\n              <p>${p}</p>`).join('\n              ')}
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>`;

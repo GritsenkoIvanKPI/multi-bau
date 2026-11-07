@@ -2,7 +2,8 @@
 // Run from the project root: node tools/build.mjs
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
-import { ROOT, layout, pageHero, formSection, faq, icon, arrowLink, esc, CALC_SECTION } from './lib.mjs';
+import { ROOT, layout, pageHero, formSection, faq, icon, arrowLink, esc, CALC_SECTION, seoBlock } from './lib.mjs';
+import { meta, blocks, stageSeo, stageH1 } from './seo.mjs';
 import { services, projects } from './content.mjs';
 
 const pages = [];
@@ -176,7 +177,7 @@ for (const s of Object.values(services)) {
       description: `${st.name} у межах послуги «${s.name}» у Берліні: ${st.includes.slice(0, 3).join(', ').toLowerCase()}. Гарантія 5 років.`,
       image: st.image,
       body: `
-    ${pageHero({ crumbs: [HOME, [base, s.name], [path, st.name]], badge: `${s.name} · Етап ${String(i + 1).padStart(2, '0')}`, title: st.name, lead: st.lead, image: st.image, alt: st.alt, small: true,
+    ${pageHero({ crumbs: [HOME, [base, s.name], [path, st.name]], badge: `${s.name} · Етап ${String(i + 1).padStart(2, '0')}`, title: stageH1[path] || st.name, lead: st.lead, image: st.image, alt: st.alt, small: true,
       actions: [{ href: '#zayavka', label: 'Залишити заявку' }, { href: base, label: `Усі етапи` }] })}
 
     <section class="section includes" aria-labelledby="includes-title">
@@ -185,6 +186,7 @@ for (const s of Object.values(services)) {
           <p class="badge">Що входить</p>
           <h2 id="includes-title">Роботи на цьому етапі.</h2>
           <p class="lead body-muted">${st.lead}</p>
+          ${stageSeo[path] ? `<p class="includes__seo">${stageSeo[path]}</p>` : ''}
         </div>
         <ul class="check-list" data-reveal data-d="1">
           ${st.includes.map((t) => `<li><span class="check-list__icon">${icon('check')}</span><span>${t}</span></li>`).join('\n          ')}
@@ -612,9 +614,43 @@ projects.forEach((p, i) => {
 });
 
 /* ---------- Write ---------- */
+const SITE = 'https://www.multibau-berlin.de';
+const strip = (h) => h.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
 for (const p of pages) {
+  /* SEO title/description and text block */
+  if (meta[p.path]) Object.assign(p, meta[p.path]);
+  if (blocks[p.path]) {
+    const block = seoBlock(blocks[p.path]);
+    p.body = p.body.includes('<section class="contact-cta"') ? p.body.replace('<section class="contact-cta"', block.trim() + '\n\n    <section class="contact-cta"') : p.body + block;
+  }
+  /* Structured data: breadcrumbs + FAQ */
+  const schema = [].concat(p.schema || []);
+  const nav = p.body.match(/<nav class="crumbs[\s\S]*?<\/nav>/);
+  if (nav) {
+    const items = [...nav[0].matchAll(/<li>(?:<a href="([^"]+)">|<span aria-current="page">)([^<]+)/g)];
+    schema.push({ '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items.map(([, href, name], i) => ({ '@type': 'ListItem', position: i + 1, name: strip(name), item: SITE + (href || p.path) })) });
+  }
+  const qa = [...p.body.matchAll(/<summary><span>([^<]+)<\/span><span class="faq__icon"[\s\S]*?<div class="faq__body"><p>([\s\S]*?)<\/p>/g)];
+  if (qa.length) schema.push({ '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: qa.map(([, q, a]) => ({ '@type': 'Question', name: strip(q), acceptedAnswer: { '@type': 'Answer', text: strip(a) } })) });
+  p.schema = schema;
+
   const dir = ROOT + p.path.slice(1);
   mkdirSync(dir, { recursive: true });
   writeFileSync(dir + 'index.html', layout(p));
 }
-console.log(`Built ${pages.length} pages:\n` + pages.map((p) => '  ' + p.path).join('\n'));
+
+/* sitemap.xml + robots.txt */
+const today = new Date().toISOString().slice(0, 10);
+const urls = ['/', ...pages.map((p) => p.path)];
+writeFileSync(ROOT + 'sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls.map((u) => `  <url><loc>${SITE}${u}</loc><lastmod>${today}</lastmod><priority>${u === '/' ? '1.0' : u.split('/').filter(Boolean).length === 2 || ['/kalkulator/', '/kontakt/'].includes(u) ? '0.8' : '0.6'}</priority></url>`).join('\n')}
+</urlset>
+`);
+writeFileSync(ROOT + 'robots.txt', `User-agent: *
+Allow: /
+Disallow: /tools/
+
+Sitemap: ${SITE}/sitemap.xml
+`);
+console.log(`Built ${pages.length} pages + sitemap.xml (${urls.length} URLs) + robots.txt`);

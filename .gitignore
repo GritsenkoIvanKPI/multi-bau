@@ -15,3 +15,6 @@ GEMINI_IMAGE_GENERATION.md
 .DS_Store
 node_modules/
 .env
+
+# SEO working notes (internal)
+SEO_SEMANTIC_CORE.md
