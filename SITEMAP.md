@@ -3,39 +3,34 @@
 Status: ✅ built · ⏳ planned (already linked from nav/footer on the homepage)
 
 ```
-/                                   ✅ Головна (index.html, українською) · German version kept as index.de.html
-/leistungen/badsanierung/                    ⏳
-    demontage-entsorgung/                    ⏳ Demontage & Entsorgung (incl. Schutz-/Vorbereitungsarbeiten)
-    sanitaer-rohinstallation/                ⏳ Sanitär-Rohinstallation (Wasserpunkte, Vorwand, opt. bodengleiche Dusche)
-    untergrund-vorbereitung/                 ⏳ Untergrund & Vorbereitung (Putz, Wände/Boden ausgleichen, opt. Trockenbau/Spanndecke)
-    fliesenarbeiten/                         ⏳ Abdichtung & Fliesen (Fuge/Epoxid, Silikon)
-    endmontage/                              ⏳ Endmontage Sanitär (Waschtisch nach Körpergröße, Spiegel, WC/Bidet/Wanne, Dusche)
-/leistungen/wohnungsrenovierung/             ⏳
-    demontage-entsorgung/                    ⏳
-    trockenbau/                              ⏳ Wände, Decken, Vorsatzschalen, Wärme-/Schalldämmung
-    elektroarbeiten/                         ⏳ Planung, Schlitze, Kabelwege, Dosen — Hinweis: Anschluss durch Elektro-Fachbetrieb
-    spachtel-malerarbeiten/                  ⏳ Q1–Q4, Anstrich, Tapeten — Hinweis: Partnerbetriebe bei Zulassungspflicht
-    montagearbeiten/                         ⏳ Böden, Türen, Fensterbänke, Parkett, Sockelleisten
-/leistungen/bodenarbeiten/                   ⏳
-    vinyl-laminat/ · parkett/ · estrich-ausgleich/ · sockelleisten/
-/leistungen/malerarbeiten/                   ⏳
-    untergrundvorbereitung/ · spachteln-q1-q4/ · wand-deckenanstrich/ · tapezierarbeiten/
-/leistungen/sanitaerarbeiten/                ⏳
-    wasserleitungen/ · bodengleiche-dusche/ · fussbodenheizung/ · badkeramik-armaturen/
-/ueber-uns/                                  ⏳
-/kontakt/                                    ⏳
-/kalkulator/                                 ⏳ (waiting for pricing parameters from client)
-/dokumente/                                  ⏳
-    impressum/ · datenschutz/ · auftrag-reklamation/
+/                                   ✅ Головна (index.html, hand-written) · German version kept as index.de.html
+/leistungen/badsanierung/           ✅ Ремонт ванної кімнати
+    demontage-entsorgung/ · sanitaer-rohinstallation/ · untergrund-vorbereitung/ · fliesenarbeiten/ · endmontage/   ✅
+/leistungen/wohnungsrenovierung/    ✅ Ремонт квартири
+    demontage-entsorgung/ · trockenbau/ · elektroarbeiten/ · spachtel-malerarbeiten/ · montagearbeiten/   ✅
+/ueber-uns/                         ✅ Про нас
+/kontakt/                           ✅ Контакти
+/kalkulator/                        ✅ Калькулятор (rates still placeholders)
+/dokumente/                         ✅ Документи
+    impressum/ · datenschutz/ · auftrag-reklamation/   ✅ (legal texts are templates – lawyer must review)
+/portfolio/                         ✅ Портфоліо
+    kvartyra-pid-klyuch/ · klasychna-vanna-altbau/ · dushova-z-trapom/ · kvartyra-novobudova/ · dush-u-riven-pidlogy/   ✅
 ```
 
-Subpages for Boden-, Maler- and Sanitärarbeiten are proposals; the brief only details Bad and Wohnung.
+## How inner pages are built
+All pages except the homepage are generated: edit text in `tools/content.mjs` (services, stages, projects)
+or page layouts in `tools/build.mjs`, then run `node tools/build.mjs`.
+Header, footer and the request form are copied from `index.html` on every build, so change them there first.
+Floor, painting and plumbing services were dropped from the site.
+
 
 ## Placeholders to replace before launch
 - Phone `+49 30 000 000 00`, email `info@multibau-berlin.de`, domain in `<link rel=canonical>` / JSON-LD
 - Google review on the homepage (sample text) → real Google Reviews widget (needs consent banner)
 - Project cards (titles, districts, photos) → real projects / before-after photos from client
-- Team avatars in hero (AI-generated) → real photos
+- All photos are AI-generated (Gemini) → replace with real project photos
+- Portfolio projects (titles, districts, areas, before/after) are illustrative
+- Impressum data in [brackets], Datenschutz template, contact hours, «call within one working day» → confirm
 - "8 Projekte in diesem Jahr" → confirm figure
 - Calculator rates in `assets/js/main.js` → `CALC_RATES` (placeholder €/m², work only) → replace with client's pricing
 - Feedback form has no backend yet (shows success state only) → connect to email/form service
